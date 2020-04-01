@@ -14,7 +14,8 @@ public class FermatsFactoring {
      * повертає n якщо √n ціле число
      * повертає 2 якщо число парне
      */
-    public BigInteger factoring(BigInteger n) {
+    public BigInteger factoring(BigInteger n) throws InterruptedException {
+        Thread.sleep(5000); //симулюємо довге виконання задачі
         BigInteger two = new BigInteger("2");
 
         if (Integer.valueOf(n.toString()) % 2 == 0) {

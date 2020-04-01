@@ -9,10 +9,17 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.math.BigInteger;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class MainActivity extends AppCompatActivity {
 
-    public BigInteger Factoring(FermatsFactoring cFermatsFactoring, BigInteger n) {
+    public BigInteger Factoring(FermatsFactoring cFermatsFactoring, BigInteger n) throws InterruptedException {
         return cFermatsFactoring.factoring(n);
     }
 
@@ -28,16 +35,33 @@ public class MainActivity extends AppCompatActivity {
                 EditText editText = (EditText) findViewById(R.id.editText);
                 TextView testTextView = (TextView) findViewById(R.id.testTextView);
 
-                int num = Integer.parseInt(editText.getText().toString());
+                final int num = Integer.parseInt(editText.getText().toString());
 
-                BigInteger result = Factoring(new FermatsFactoring(), BigInteger.valueOf(num));
+                ExecutorService executor = Executors.newCachedThreadPool();
+                Callable<Object> task = new Callable<Object>() {
+                    public Object call() throws InterruptedException {
+                        return Factoring(new FermatsFactoring(), BigInteger.valueOf(num));
+                    }
+                };
+                Future<Object> future = executor.submit(task);
 
-                if (Integer.valueOf(result.toString()) == 2) {
-                    testTextView.setText("Парне число");
-                } else if (Integer.valueOf(result.toString()) == num) {
-                    testTextView.setText(Math.round(Math.sqrt(Double.valueOf(String.valueOf(num)))) + " ^ 2");
-                } else {
-                    testTextView.setText(result + " * " + num/Integer.valueOf(result.toString()));
+                try {
+                    Object result = future.get(3, TimeUnit.SECONDS);
+                    if (Integer.valueOf(result.toString()) == 2) {
+                        testTextView.setText("Парне число");
+                    } else if (Integer.valueOf(result.toString()) == num) {
+                        testTextView.setText(Math.round(Math.sqrt(Double.valueOf(String.valueOf(num)))) + " ^ 2");
+                    } else {
+                        testTextView.setText(result + " * " + num/Integer.valueOf(result.toString()));
+                    }
+                } catch (TimeoutException ex) {
+                    testTextView.setText("Час вичерпаний");
+                } catch (InterruptedException e) {
+                    testTextView.setText("Щось пішло не так");
+                } catch (ExecutionException e) {
+                    testTextView.setText("Щось пішло не так");
+                } finally {
+                    future.cancel(true);
                 }
             }
         });
